@@ -182,3 +182,150 @@ module.exports = {
   }
 }
 ```
+## 资源解析：解析图片
+- `file-loader` 用于处理文件
+```javascript
+module.exports = {
+  entry: 'index.js',
+  output: {
+    filename: 'bundle.js',
+    path: __dirname + 'dist' 
+  },
+  module: {
+    rules: [
+      {
+        test: /\.(png|jpe?g|gif)$/i,
+        use: 'file-loader'
+      }
+    ]
+  }
+}
+```
+## CSS 文件的压缩
+- 使用 optimize-css-assets-webpack-plugin
+- 同时使用 cssnano
+```javascript
+module.exports = {
+  entry: 'index.js',
+  output: {
+    filename: 'bundle.js',
+    path: __dirname + 'dist' 
+  },
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: './src/index.html'
+    }),
+    new OptimizeCssAssetsWebpackPlugin({
+      assetNameRegExp: /\.css$/g,
+      cssProcesor: require('cssnano')
+    })
+  ]
+}
+```
+## html 文件的压缩
+- 修改 html-webpack-plugin,设置压缩参数
+```javascript
+new htmlWebpackPlugin({
+  tmeplate: path.join(__dirname, 'src/index.html'),
+  filename: 'index.html',
+  chunks: ['index'],
+  inject: true,
+  minify: {
+    html5: true,
+    minifyCss: true,
+    minifyJs: true,
+    collapseWhitespace: true,
+    removeComments: true
+  }
+})
+```
+## 当前构建时的问题
+- 每次构建时候会清理目录，造成构建的输出目录 output 文件越来越多
+- 通过 npm scripts 清理构建目录
+  rm -rf ./dist && webpack
+  rimraf ./dist && webpack
+## 自动清理构建目录
+- 避免构建前每次都需要手动清理 dist
+- 使用 clean-webpack-plugin
+  默认会删除 output 指定的输出目录
+```javascript
+module.exports = {
+  entry: 'index.js',
+  output: {
+    filename: 'bundle.js',
+    path: __dirname + 'dist' 
+  },
+  plugins: [
+    new CleanWebpackPlugin()
+  ]
+}
+```
+## CSS3 的属性为什么需要前缀
+- IE Trident(-ms)
+- 火狐 Geko(-moz)
+- 谷歌Chrome Webkit(-webkit)
+- 欧朋 Presto(-o)
+## PostCss 插件 autoprefixer 自动补齐 CSS3前缀
+- 使用 autoprefixer
+- 根据  规则 [Can I Use](https://caniuse.com)
+```javascript
+module.exports = {
+  entry: 'index.js',
+  output: {
+    filename: 'bundle.js',
+    path: __dirname + 'dist' 
+  },
+  module: {
+    rules: [
+      {
+        test: /\.less$/, // 使用 less-loader 的时候 必须安装 less less-loader
+        use: ['style-loader', 'css-loader', 'less-loader',
+        {
+          loader: 'postcss-loader',
+          plugins: () => [
+            require('autoprefixer')({
+              browsers: ['last 2 version', '>1%', 'ios 7']
+            })
+          ]
+        }]
+      }
+    ]
+  }
+}
+```
+## 浏览器的分辨率
+- CSS 媒体查询实现响应式布局（缺陷：需要写多套适配样式代码）
+- rem 是什么 ？
+    W3C 对 rem 定义：font-size of the root element
+- rem 和 px 对比
+  rem 是相对单位
+  px 是绝对单位
+## 移动端 CSS px 自动转换成 rem
+- 使用 px2rem-loader
+- 页面渲染时，计算根元素的 font-size 值
+- 可以使用手淘的 [lib-flexible](https://github.com/amfe/lib-flexible) 库
+```javascript
+module.exports = {
+  entry: 'index.js',
+  output: {
+    filename: 'bundle.js',
+    path: __dirname + 'dist' 
+  },
+  module: {
+    rules: [
+      {
+        test: /\.less$/, // 使用 less-loader 的时候 必须安装 less less-loader
+        use: ['style-loader', 'css-loader', 'less-loader',
+        {
+          loader: 'px2rem-loader',
+          options: {
+            remUnit: 75,
+            remPrecision: 8
+          }
+        }
+        ]
+      }
+    ]
+  }
+}
+```
