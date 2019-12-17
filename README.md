@@ -402,4 +402,89 @@ module.exports = {
   }
 }
 ```
-  
+
+## 多页面应用（MPA）概念
+
+- 每次页面跳转的时候，后台服务器都会返回一个新的 html 文档，这种类型的网站也就是多页面网站，也叫做多页应用
+
+## 多页面打包基本路由
+
+- 每个页面对应一个 `entry`, 一个 `html-webpack-plugin`
+- 缺点：每次新增或删除页面需要改 webpack 配置
+```javascript
+module.exports = {
+  entry: {
+    index: './src/index.js',
+    search: './src/search.js'
+  }
+}
+```
+
+## 多页面打包通用方案
+
+- 动态获取 `entry` 和设置 `html-webpack-plugin` 数量
+- 利用 glob.sync (需要安装 glob 包)
+- `entry: glob.sync(path.join(__dirname, './src/*/index.js'))`
+- 比如有两个页面分别是 index.html 和 search.html 都需要打包到 bundle.js 中，分别创建 index 和 search 目录
+- 分别把文件 index.html search.html 放置 index search 目录中，命名 index.html index.js 各个名称都叫 index
+
+ 1. index/
+    index.html
+    index.js
+    css/
+    image/
+
+ 2. search/
+    index.html
+    index.js
+    css/
+    image/
+
+```javascript
+const path = require('path')
+const setMPA = () => {
+  const entry = {}
+  const htmlWebpackPlugin = []
+  const entryFiles = glob.sync(path.join(__dirname, 'src/*/index.js'))
+  // console.log(entryFiles)
+  Object.keys(entryFiles)
+    .map((index) => {
+      const entryFile = entryFiles[index];
+      const match = entryFile.match(/src\/(.*)\/index\.js/);
+      const pageName = match && match[1]
+      console.log('pageName', pageName)
+      entry[pageName] = entryFile;
+      htmlWebpackPlugin.push(
+        new HtmlWebpackPlugin({
+          template: path.join(__dirname, `src/${pageName}/index.html`),
+          filename: `${pageName}.html`,
+          chunks: [pageName],
+          minify: {
+            html5: true,
+            collapseWhitespace: true,
+            removeComments: false
+          }
+        })
+      )
+    })
+  return {
+    entry,
+    htmlWebpackPlugin
+  }
+}
+const { entry, htmlWebpackPlugin } = setMPA();
+module.exports = {
+  mode: 'production',
+  entry: entry,
+  output: {
+    filename: '[name]_[chunkhash:8].js',
+    path: path.join(__dirname, 'dist')
+  },
+  plugins: [
+    new OptimizeCssAssetsWebpackPlugin({
+      assetNameRegExp: /\.css$/g,
+      cssProcessor: require('cssnano'),
+    })
+  ].concat(htmlWebpackPlugin)
+}
+```
