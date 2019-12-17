@@ -381,7 +381,6 @@ module.exports = {
 ```
 以下是正确的用法
 ```javascript
-// 以下代码 style-loader webpack4中 options属性已废弃
 module.exports = {
   entry: 'index.js',
   output: {
