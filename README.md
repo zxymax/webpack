@@ -311,7 +311,7 @@ module.exports = {
     filename: 'bundle.js',
     path: __dirname + 'dist' 
   },
-  module: {
+  modul e: {
     rules: [
       {
         test: /\.less$/, // 使用 less-loader 的时候 必须安装 less less-loader
@@ -319,8 +319,8 @@ module.exports = {
         {
           loader: 'px2rem-loader',
           options: {
-            remUnit: 75,
-            remPrecision: 8
+            remUnit: 75, // rem 相对于 px 的转换单位，这里代表 1rem 为 75px
+            remPrecision: 8 // 代表转换成 rem 后小数点的位数
           }
         }
         ]
@@ -329,3 +329,78 @@ module.exports = {
   }
 }
 ```
+
+## 静态资源内联（静态资源内联的意义）
+
+代码层面
+  - 页面框架的初始化脚本
+  - 上报相关打点
+  - css 内联避免页面闪动
+  
+  请求层面：减少 HTTP 网络请求数
+  - 小图片或者字体内联（url-loader）
+  
+## HTML 和 JS 内联
+
+- `raw-loader` 内联 html
+```javascript
+<script>${require('raw-loader!babel-loader!./meta.html')}</script>
+```
+- `raw-loader` 内联 JS
+```javascript
+<script>${require('raw-loader!babel-loader!../nodule_modules/lib-flexible/flexible.js')}</script>
+```
+
+## CSS 内联
+
+- 方案一：借助 `style-loader`
+- 方案二：`html-inline-css-webpack-plugin`
+```javascript
+// 以下代码 style-loader webpack4中 options属性已废弃
+module.exports = {
+  entry: 'index.js',
+  output: {
+    filename: 'bundle.js',
+    path: __dirname + 'dist' 
+  },
+  module: {
+    rules: [
+      {
+        test: /\.css$/, 
+        use: [{
+          loader: 'style-loader',
+          options: {
+            insertAt: 'top', // 样式插入到 <head> webpack 4 此属性已废弃
+            singleton: true // 将所有的 style 标签合并成一个 webpack 4 此属性已废弃
+          }
+        }, 'css-loader']
+      }
+    ]
+  }
+}
+```
+以下是正确的用法
+```javascript
+// 以下代码 style-loader webpack4中 options属性已废弃
+module.exports = {
+  entry: 'index.js',
+  output: {
+    filename: 'bundle.js',
+    path: __dirname + 'dist' 
+  },
+  module: {
+    rules: [
+      {
+        test: /\.css$/, 
+        use: [{
+          loader: 'style-loader',
+          options: {
+              injectType: 'singletonStyleTag'
+          },
+        }, 'css-loader']
+      }
+    ]
+  }
+}
+```
+  
